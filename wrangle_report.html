@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>wrangle_report</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<h1 id="wrangle-and-analyze-data-report">Wrangle and Analyze Data Report</h1>
+<blockquote>
+<p>Author: Darren Seet</p>
+</blockquote>
+<p>This project performs the Data Wrangling required to clean the data for performing the analysis. It is done in the following steps:</p>
+<ul>
+<li><a href="#Gather">Gather</a></li>
+<li><a href="#Access">Access</a></li>
+<li><a href="#Clean">Clean</a></li>
+</ul>
+<h2 id="gather">Gather</h2>
+<p>In this step, the operations to obtain the data for analyzing is carried out. There are 3 data sources and the following are the methods used to obtained them.</p>
+<ol type="1">
+<li><p>twitter archive enhanced: This was provided in the Udacity site as a download that is manually downloaded via the browser</p></li>
+<li><p>tweet image predictions: This is hosted on a location that is accessible publicly on the web. The python requests package is used to access the file and saved on a location accessible to the notebook</p></li>
+<li><p>twitter archive details: This data is obtained from the Twitter API. The ids are obtained from the twitter archive enhanced datasource and used to query the API to obtain the result as a JSON object for each tweet. The JSON object is stored as a line in a flat text file.</p></li>
+</ol>
+<h2 id="access">Access</h2>
+<p>In this step, the datasources obtained in the Gather step is analyzed to observe to find any Dirty or Messy data for cleaning.</p>
+<ul>
+<li>Dirty data, also known as low quality data. Low quality data has content issues.</li>
+<li>Messy data, also known as untidy data. Untidy data has structural issues. - Data that belong</li>
+</ul>
+<p>To find these data, we made visually or access via code. The visual method is performed by opening the flat file in Excel using the data filtering features to look into the data. The second method uses Python and Pandas code and the following is some of the commands that provides insight to the data.</p>
+<ol type="1">
+<li><p>DataFrame.info - Provides visibility to the data that checks for null values across columns and also counts by columns. Shows the schema of the dataframe that allows possible identification of Untidy data.</p></li>
+<li><p>DataFrame.describe - Provides visibility to outliers in the data source</p></li>
+<li><p>DataFrame.duplicate - Allows the identification of duplicates in the data source</p></li>
+<li><p>DataFrame.query - Allows the querying of values in the DataFrame to observe the data for issues</p></li>
+<li><p>Series.str.len - Allows the querying of data by the length of the value to find short values that might be wrong</p></li>
+<li><p>Series.value_counts - Allows a count of data in a series to find possible duplicates</p></li>
+<li><p>Series.isnull - Allows the querying of null data</p></li>
+</ol>
+<h2 id="clean">Clean</h2>
+<p>In this step, the issues identified in the Access step is clean via code. Firstly the source dataframes are duplicated using the copy command to make sure the original source data is available while cleaning if required.</p>
+<h3 id="twitter-archive-enhanced">twitter archive enhanced</h3>
+<ol type="1">
+<li><p><code>expanded_urls</code> - cleaned by removing None and split into a new DataFrame of expanded_url by tweet_id</p></li>
+<li><p><code>timestamp</code> - converted to a date time type using <code>to_datetime</code></p></li>
+<li><p><code>rating_denominator</code> - set to 10 for all records to match the rating rules</p></li>
+<li><p><code>in_reply_to_status_id</code> - all records with non null value is removed from the dataframe. Twitter API documentation indicates that a non null value represents a reply <code>Nullable. If the represented Tweet is a reply, this field will contain the integer representation of the original Tweet’s ID.</code></p></li>
+<li><p><code>retweeted_status_id</code> - all records with non null value is removed from the dataframe. Twitter API documentation indicates that a non null value represents a retweet. <code>Users can amplify the broadcast of Tweets authored by other users by retweeting . Retweets can be distinguished from typical Tweets by the existence of a retweeted_status attribute. This attribute contains a representation of the original Tweet that was retweeted. Note that retweets of retweets do not show representations of the intermediary retweet, but only the original Tweet. (Users can also unretweet a retweet they created by deleting their retweet.)</code></p></li>
+<li><p>expanded_urls (expanded_url) - Removed all entires that do not start with <code>https://twitter.com/dog_rates/</code> since that represents tweets not related to dog_rates.</p></li>
+<li><p>source - clean the column to remove the HTML markup</p></li>
+<li><p>All columns not used like name, doggo, floofer, pupper, puppo is dropped from the source</p></li>
+</ol>
+<h3 id="twitter-archive-details">twitter archive details</h3>
+<ol type="1">
+<li><code>id</code> - Used <code>rename</code> to change the name to <code>tweet_id</code> to match other datasources</li>
+</ol>
+<h3 id="twitter-analysis">twitter analysis</h3>
+<p>This is the new dataframe that is created by joining <code>twitter archive enhanced</code>, <code>tweet image predictions</code> and <code>twitter archive details</code>. The final result is persisted as a flat file (csv) named <code>twitter_analysis_source.csv</code>.</p>
+<p>The schema of the data source is</p>
+<pre class="pandas"><code> #   Column              Non-Null Count  Dtype
+---  ------              --------------  -----
+ 0   tweet_id            1971 non-null   int64
+ 1   timestamp           1971 non-null   datetime64[ns, UTC]
+ 2   source_enhanced     1971 non-null   object
+ 3   text                1971 non-null   object
+ 4   rating_numerator    1971 non-null   int64
+ 5   rating_denominator  1971 non-null   int64
+ 6   img_num             1971 non-null   int64
+ 7   p1                  1971 non-null   object
+ 8   p1_conf             1971 non-null   float64
+ 9   p1_dog              1971 non-null   bool
+ 10  p2                  1971 non-null   object
+ 11  p2_conf             1971 non-null   float64
+ 12  p2_dog              1971 non-null   bool
+ 13  p3                  1971 non-null   object
+ 14  p3_conf             1971 non-null   float64
+ 15  p3_dog              1971 non-null   bool
+ 16  created_at          1964 non-null   datetime64[ns, UTC]
+ 17  full_text           1964 non-null   object
+ 18  retweet_count       1964 non-null   Int64
+ 19  favorite_count      1964 non-null   Int64</code></pre>
+</body>
+</html>
